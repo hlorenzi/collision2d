@@ -3,10 +3,37 @@ class Solver
 	constructor()
 	{
 		this.segments = []
+		this.polygons = []
 	}
 	
 	
 	solveCircle(position, speed, radius)
+	{
+		position = position.add(speed)
+		
+		for (let i = 0; i < 10; i++)
+		{
+			let resolutionVector = new Vec2(0, 0)
+			for (let polygon of this.polygons)
+			{
+				let collision = Geometry.circleConvexPolygonCollision2d(position, radius, polygon)
+				if (!collision.collided)
+					continue
+				
+				resolutionVector = resolutionVector.add(collision.nearestResolutionVector)
+			}
+			
+			position = position.add(resolutionVector)
+			
+			if (resolutionVector.magn() == 0)
+				break
+		}
+		
+		return { position, intersect: null }
+	}
+	
+	
+	solveCircleIntersect(position, speed, radius)
 	{
 		if (speed.magn() == 0)
 			return { position }
@@ -86,5 +113,39 @@ class SolverSegment
 	{
 		this.v1 = v1
 		this.v2 = v2
+	}
+}
+
+
+class SolverPolygon
+{
+	constructor(vertices)
+	{
+		this.vertices = vertices
+	}
+	
+	
+	static rectangle(x, y, w, h)
+	{
+		return new SolverPolygon([
+			new Vec2(x,     y),
+			new Vec2(x + w, y),
+			new Vec2(x + w, y + h),
+			new Vec2(x,     y + h)])
+	}
+	
+	
+	static regularPolygon(x, y, w, h, edgeNum = 4, rotation = 0)
+	{
+		let vertices = []
+		for (let i = 0; i < edgeNum; i++)
+		{
+			let angle = rotation + Math.PI + (i * Math.PI * 2 / edgeNum)
+			vertices.push(new Vec2(
+				x + Math.cos(angle) * w,
+				y - Math.sin(angle) * h))
+		}
+		
+		return new SolverPolygon(vertices)
 	}
 }

@@ -19,6 +19,12 @@ class Vec2
 	}
 
 
+	magnSqr()
+	{
+		return this.dot(this)
+	}
+
+
 	norm()
 	{
 		const magn = this.magn()

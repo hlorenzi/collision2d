@@ -103,4 +103,39 @@ class Geometry
 		
 		return intersect
 	}
+	
+	
+	static circleConvexPolygonCollision2d(circlePosition, circleRadius, polygon)
+	{
+		let collided = true
+		let nearestResolutionVector = null
+		let nearestResolutionDistanceSqr = null
+		
+		for (let i = 0; i < polygon.vertices.length; i++)
+		{
+			let v1 = polygon.vertices[i]
+			let v2 = polygon.vertices[(i + 1) % polygon.vertices.length]
+			let edge = v2.sub(v1)
+			let relativeCirclePos = circlePosition.sub(v1)
+			let isCenterInside = relativeCirclePos.dot(edge.clockwisePerpendicular()) > 0
+			let vectorToEdge = relativeCirclePos.project(edge).sub(relativeCirclePos)
+			
+			let resolutionVector = null
+			if (isCenterInside)
+				resolutionVector = vectorToEdge.norm().scale(vectorToEdge.magn() + circleRadius)
+			else
+				resolutionVector = vectorToEdge.norm().scale(circleRadius - vectorToEdge.magn()).neg()
+			
+			let isColliding = vectorToEdge.magn() < circleRadius || isCenterInside
+			collided &= isColliding
+			
+			if (nearestResolutionDistanceSqr == null || resolutionVector.magnSqr() < nearestResolutionDistanceSqr)
+			{
+				nearestResolutionDistanceSqr = resolutionVector.magnSqr()
+				nearestResolutionVector = resolutionVector
+			}
+		}
+		
+		return { collided, nearestResolutionVector }
+	}
 }

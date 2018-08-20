@@ -6,6 +6,7 @@ let canvasHeight = 0
 
 let solver = null
 let circle = null
+let polygonData = null
 
 
 let input =
@@ -26,12 +27,25 @@ function main()
 	ctx = canvas.getContext("2d")
 	
 	solver = new Solver()
-	for (let i = 0; i < 10; i++)
+	/*for (let i = 0; i < 10; i++)
 	{
 		solver.segments.push(new SolverSegment(
 			new Vec2(Math.random() * canvasWidth, Math.random() * canvasHeight),
 			new Vec2(Math.random() * canvasWidth, Math.random() * canvasHeight)))
-	}
+	}*/
+	
+	polygonData = []
+	for (let i = 0; i < 10; i++)
+		polygonData.push(
+		{
+			x: Math.random() * (canvasWidth - 200),
+			y: Math.random() * (canvasHeight - 200),
+			w: Math.random() * 200,
+			h: Math.random() * 200,
+			edgeNum: 3 + Math.floor(Math.random() * 9),
+			rotation: Math.random() * Math.PI * 2,
+			rotationSpeed: (Math.random() * 2 - 1) * 0.05
+		})
 	
 	circle = { position: new Vec2(canvasWidth / 2, canvasHeight / 2), radius: 15 }
 	
@@ -81,6 +95,18 @@ function onKey(ev, down)
 
 function step()
 {
+	solver.polygons = []
+	for (let polygon of polygonData)
+	{
+		polygon.rotation += polygon.rotationSpeed
+		
+		solver.polygons.push(SolverPolygon.regularPolygon(
+			polygon.x, polygon.y,
+			polygon.w, polygon.h,
+			polygon.edgeNum,
+			polygon.rotation))
+	}
+	
 	let circleSpeed = new Vec2(
 		input.left ? -1 : input.right ? 1 : 0,
 		input.up ? -1 : input.down ? 1 : 0)
@@ -133,6 +159,23 @@ function draw()
 		
 		/*ctx.beginPath()
 		ctx.arc(segment.v1.x, segment.v1.y, 4, 0, Math.PI * 2)
+		ctx.fill()*/
+	}
+	
+	for (let polygon of solver.polygons)
+	{
+		ctx.beginPath()
+		ctx.moveTo(polygon.vertices[0].x, polygon.vertices[0].y)
+		
+		for (let i = 1; i < polygon.vertices.length; i++)
+			ctx.lineTo(polygon.vertices[i].x, polygon.vertices[i].y)
+		
+		ctx.lineTo(polygon.vertices[0].x, polygon.vertices[0].y)
+		ctx.stroke()
+		
+		/*ctx.beginPath()
+		ctx.arc(polygon.vertices[0].x, polygon.vertices[0].y, 4, 0, Math.PI * 2)
+		ctx.arc(polygon.vertices[1].x, polygon.vertices[1].y, 4, 0, Math.PI * 2)
 		ctx.fill()*/
 	}
 	
