@@ -38,8 +38,8 @@ function main()
 	for (let i = 0; i < 10; i++)
 		polygonData.push(
 		{
-			x: Math.random() * (canvasWidth - 200),
-			y: Math.random() * (canvasHeight - 200),
+			x: Math.random() * canvasWidth,
+			y: Math.random() * canvasHeight,
 			w: Math.random() * 200,
 			h: Math.random() * 200,
 			edgeNum: 3 + Math.floor(Math.random() * 9),
@@ -47,7 +47,15 @@ function main()
 			rotationSpeed: (Math.random() * 2 - 1) * 0.05
 		})
 	
-	circle = { position: new Vec2(canvasWidth / 2, canvasHeight / 2), radius: 15 }
+	circle =
+	{
+		position: new Vec2(canvasWidth / 2, canvasHeight / 2),
+		radius: 15,
+		
+		jumping: false,
+		speedGravity: new Vec2(0, 0),
+		speedMovement: new Vec2(0, 0)
+	}
 	
 	draw()
 	
@@ -107,38 +115,52 @@ function step()
 			polygon.rotation))
 	}
 	
-	let circleSpeed = new Vec2(
-		input.left ? -1 : input.right ? 1 : 0,
-		input.up ? -1 : input.down ? 1 : 0)
+	{
+		let moveSpeed = new Vec2(input.left ? -1 : input.right ? 1 : 0, 0)
+			
+		if (moveSpeed.magn() > 0)
+			moveSpeed = moveSpeed.norm().scale(5)
 		
-	if (circleSpeed.magn() > 0)
-		circleSpeed = circleSpeed.norm().scale(5)
+		let solverResult = solver.solveCircle(circle.position, moveSpeed, circle.radius)
+		circle.position = solverResult.position
+	}
+	
+	{
+		circle.speedGravity = circle.speedGravity.add(new Vec2(0, 0.5))
+		if (circle.speedGravity.magn() > 20)
+			circle.speedGravity = circle.speedGravity.norm().scale(20)
 		
-	let solverResult = solver.solveCircle(circle.position, circleSpeed, circle.radius)
-	circle.position = solverResult.position
+		if (circle.jumping && !input.up)
+		{
+			circle.speedGravity.y *= 0.25
+			circle.jumping = false
+		}
+		
+		let solverResult = solver.solveCircle(circle.position, circle.speedGravity, circle.radius)
+		circle.position = solverResult.position
+		
+		if (solverResult.collided)
+		{
+			if (input.up && circle.speedGravity.y >= 0)
+			{
+				circle.speedGravity = new Vec2(0, -12)
+				circle.jumping = true
+			}
+			else
+			{
+				circle.speedGravity = new Vec2(0, 0)
+				circle.jumping = false
+			}
+		}
+		
+		if (circle.speedGravity.y >= 0)
+			circle.jumping = false
+		
+		while (circle.position.y > canvasHeight)
+			circle.position.y -= canvasHeight
+	}
 	
 	draw()
-	
-	/*ctx.strokeStyle = "#ddd"
-	ctx.beginPath()
-	ctx.moveTo(circle.position.x, circle.position.y)
-	ctx.lineTo(circle.position.x + circleSpeed.x * 10000, circle.position.y + circleSpeed.y * 10000)
-	ctx.stroke()
-	
-	if (solverResult.intersect != null)
-	{
-		ctx.strokeStyle = "#f0f"
-		ctx.beginPath()
-		ctx.arc(solverResult.intersect.point.x, solverResult.intersect.point.y, 2, 0, Math.PI * 2)
-		ctx.stroke()
-		
-		ctx.strokeStyle = "#f80"
-		ctx.beginPath()
-		ctx.moveTo(solverResult.intersect.point.x, solverResult.intersect.point.y)
-		ctx.lineTo(solverResult.intersect.point.x + solverResult.intersect.normal.x * 15, solverResult.intersect.point.y + solverResult.intersect.normal.y * 15)
-		ctx.stroke()
-	}*/
-	
 	window.requestAnimationFrame(step)
 }
 

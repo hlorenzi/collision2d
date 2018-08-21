@@ -105,6 +105,32 @@ class Geometry
 	}
 	
 	
+	static sweptCircleConvexPolygonIntersection2d(circleSweepV1, circleSweepV2, circleRadius, polygon)
+	{
+		let nearestIntersect = null
+		let nearestIntersectDistanceSqr = null
+		
+		for (let i = 0; i < polygon.vertices.length; i++)
+		{
+			let v1 = polygon.vertices[i]
+			let v2 = polygon.vertices[(i + 1) % polygon.vertices.length]
+			
+			let intersect = Geometry.sweptCircleSegmentIntersection2d(circleSweepV1, circleSweepV2, circleRadius, v1, v2)
+			if (intersect == null)
+				continue
+			
+			let distanceSqr = circleSweepV1.sub(intersect.point).magnSqr()
+			if (nearestIntersectDistanceSqr == null || distanceSqr < nearestIntersectDistanceSqr)
+			{
+				nearestIntersect = intersect
+				nearestIntersectDistanceSqr = distanceSqr
+			}
+		}
+		
+		return { intersect: nearestIntersect }
+	}
+	
+	
 	static circleConvexPolygonCollision2d(circlePosition, circleRadius, polygon)
 	{
 		let collided = true

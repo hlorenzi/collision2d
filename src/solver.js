@@ -7,9 +7,47 @@ class Solver
 	}
 	
 	
+	isInside(position, radius)
+	{
+		for (let polygon of this.polygons)
+		{
+			let collision = Geometry.circleConvexPolygonCollision2d(position, radius, polygon)
+			if (collision.collided)
+				return true
+		}
+		
+		return false
+	}
+	
+	
+	raycast(position, direction, radius)
+	{
+		let nearestIntersect = null
+		let nearestIntersectDistanceSqr = null
+		
+		for (let polygon of this.polygons)
+		{
+			let raycast = Geometry.sweptCircleConvexPolygonIntersection2d(position, position.add(direction), radius, polygon)
+			if (raycast.intersect == null)
+				continue
+			
+			let distanceSqr = position.sub(raycast.intersect.point).magnSqr()
+			if (nearestIntersectDistanceSqr == null || distanceSqr < nearestIntersectDistanceSqr)
+			{
+				nearestIntersect = raycast.intersect
+				nearestIntersectDistanceSqr = distanceSqr
+			}
+		}
+		
+		return nearestIntersect
+	}
+	
+	
 	solveCircle(position, speed, radius)
 	{
 		position = position.add(speed)
+		
+		let collided = false
 		
 		for (let i = 0; i < 10; i++)
 		{
@@ -20,6 +58,7 @@ class Solver
 				if (!collision.collided)
 					continue
 				
+				collided = true
 				resolutionVector = resolutionVector.add(collision.nearestResolutionVector)
 			}
 			
@@ -29,7 +68,7 @@ class Solver
 				break
 		}
 		
-		return { position, intersect: null }
+		return { position, collided }
 	}
 	
 	
