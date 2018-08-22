@@ -5,13 +5,14 @@ let canvasHeight = 0
 
 
 let solver = null
-let circle = null
+let player = null
 let polygonData = null
 
 
 let input =
 {
 	reset: false,
+	toggle: false,
 	up: false,
 	down: false,
 	left: false,
@@ -46,16 +47,31 @@ function main()
 			rotation: Math.random() * Math.PI * 2,
 			rotationSpeed: (Math.random() * 2 - 1) * 0.05
 		})
-	
-	circle =
-	{
-		position: new Vec2(canvasWidth / 2, canvasHeight / 2),
-		radius: 15,
 		
-		jumping: false,
-		speedGravity: new Vec2(0, 0),
-		speedMovement: new Vec2(0, 0)
-	}
+	solver.polygons.push(new SolverPolygon([
+		new Vec2(0, 300),
+		new Vec2(300, 300),
+		new Vec2(300, 600),
+		new Vec2(0, 600)]))
+	solver.polygons.push(new SolverPolygon([
+		new Vec2(300, 300),
+		new Vec2(600, 200),
+		new Vec2(600, 600),
+		new Vec2(300, 600)]))
+	solver.polygons.push(new SolverPolygon([
+		new Vec2(600, 200),
+		new Vec2(900, 300),
+		new Vec2(900, 600),
+		new Vec2(600, 600)]))
+	
+	solver.polygons.push(new SolverPolygon([
+		new Vec2(150, 200),
+		new Vec2(300, 200),
+		new Vec2(300, 210),
+		new Vec2(150, 210)]))
+		
+		
+	player = new Player(new Vec2(canvasWidth / 2, canvasHeight / 2))
 	
 	draw()
 	
@@ -92,6 +108,10 @@ function onKey(ev, down)
 		case "r":
 			input.reset = down
 			break
+			
+		case "t":
+			input.toggle = down
+			break
 		
 		default:
 			return
@@ -103,7 +123,7 @@ function onKey(ev, down)
 
 function step()
 {
-	solver.polygons = []
+	/*solver.polygons = []
 	for (let polygon of polygonData)
 	{
 		polygon.rotation += polygon.rotationSpeed
@@ -113,52 +133,9 @@ function step()
 			polygon.w, polygon.h,
 			polygon.edgeNum,
 			polygon.rotation))
-	}
+	}*/
 	
-	{
-		let moveSpeed = new Vec2(input.left ? -1 : input.right ? 1 : 0, 0)
-			
-		if (moveSpeed.magn() > 0)
-			moveSpeed = moveSpeed.norm().scale(5)
-		
-		let solverResult = solver.solveCircle(circle.position, moveSpeed, circle.radius)
-		circle.position = solverResult.position
-	}
-	
-	{
-		circle.speedGravity = circle.speedGravity.add(new Vec2(0, 0.5))
-		if (circle.speedGravity.magn() > 20)
-			circle.speedGravity = circle.speedGravity.norm().scale(20)
-		
-		if (circle.jumping && !input.up)
-		{
-			circle.speedGravity.y *= 0.25
-			circle.jumping = false
-		}
-		
-		let solverResult = solver.solveCircle(circle.position, circle.speedGravity, circle.radius)
-		circle.position = solverResult.position
-		
-		if (solverResult.collided)
-		{
-			if (input.up && circle.speedGravity.y >= 0)
-			{
-				circle.speedGravity = new Vec2(0, -12)
-				circle.jumping = true
-			}
-			else
-			{
-				circle.speedGravity = new Vec2(0, 0)
-				circle.jumping = false
-			}
-		}
-		
-		if (circle.speedGravity.y >= 0)
-			circle.jumping = false
-		
-		while (circle.position.y > canvasHeight)
-			circle.position.y -= canvasHeight
-	}
+	player.step(input, solver)
 	
 	draw()
 	window.requestAnimationFrame(step)
@@ -222,8 +199,28 @@ function draw()
 		}
 	}*/
 	
+	let raycast = solver.raycast(player.position.add(new Vec2(0, -player.radius - 10)), new Vec2(0, 1), player.radius - 0.1)
+	if (raycast != null)
+	{
+		ctx.strokeStyle = "#ccc"
+		ctx.beginPath()
+		ctx.moveTo(player.position.x, player.position.y)
+		ctx.lineTo(raycast.point.x, raycast.point.y)
+		ctx.stroke()
+		
+		ctx.strokeStyle = "#888"
+		ctx.beginPath()
+		ctx.arc(raycast.point.x, raycast.point.y, player.radius, 0, Math.PI * 2)
+		ctx.stroke()
+		
+		ctx.strokeStyle = "#ccc"
+		ctx.beginPath()
+		ctx.arc(raycast.point.x, raycast.point.y, 2, 0, Math.PI * 2)
+		ctx.stroke()
+	}
+	
 	ctx.strokeStyle = "#00f"
 	ctx.beginPath()
-	ctx.arc(circle.position.x, circle.position.y, circle.radius, 0, Math.PI * 2)
+	ctx.arc(player.position.x, player.position.y, player.radius, 0, Math.PI * 2)
 	ctx.stroke()
 }

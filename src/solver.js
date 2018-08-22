@@ -27,7 +27,7 @@ class Solver
 		
 		for (let polygon of this.polygons)
 		{
-			let raycast = Geometry.sweptCircleConvexPolygonIntersection2d(position, position.add(direction), radius, polygon)
+			let raycast = Geometry.sweptCircleConvexPolygonRaycast2d(position, position.add(direction), radius, polygon)
 			if (raycast.intersect == null)
 				continue
 			
@@ -182,7 +182,7 @@ class SolverPolygon
 			let angle = rotation + Math.PI + (i * Math.PI * 2 / edgeNum)
 			vertices.push(new Vec2(
 				x + Math.cos(angle) * w,
-				y - Math.sin(angle) * h))
+				y + Math.sin(angle) * h))
 		}
 		
 		return new SolverPolygon(vertices)

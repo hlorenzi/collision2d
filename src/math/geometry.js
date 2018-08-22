@@ -105,6 +105,29 @@ class Geometry
 	}
 	
 	
+	static sweptCircleSegmentRaycast2d(circleSweepV1, circleSweepV2, circleRadius, segmentV1, segmentV2)
+	{
+		let intersect = Geometry.sweptCircleLineIntersection2d(circleSweepV1, circleSweepV2, circleRadius, segmentV1, segmentV2)
+		let tRadius = circleRadius / segmentV2.sub(segmentV1).magn()
+		
+		if (intersect == null ||
+			intersect.at < 0 ||
+			intersect.bt < -tRadius || intersect.bt > 1 + tRadius)
+			return null
+			
+		let edgeT = 0
+		if (intersect.bt < 0) edgeT = -intersect.bt
+		if (intersect.bt > 1) edgeT = intersect.bt - 1
+		
+		edgeT /= tRadius
+		edgeT = Math.max(0, Math.min(1, edgeT))
+		
+		intersect.point = intersect.point.sub(intersect.normal.scale(circleRadius * (1 - Math.sqrt(1 - edgeT * edgeT))))
+		
+		return intersect
+	}
+	
+	
 	static sweptCircleConvexPolygonIntersection2d(circleSweepV1, circleSweepV2, circleRadius, polygon)
 	{
 		let nearestIntersect = null
@@ -116,6 +139,32 @@ class Geometry
 			let v2 = polygon.vertices[(i + 1) % polygon.vertices.length]
 			
 			let intersect = Geometry.sweptCircleSegmentIntersection2d(circleSweepV1, circleSweepV2, circleRadius, v1, v2)
+			if (intersect == null)
+				continue
+			
+			let distanceSqr = circleSweepV1.sub(intersect.point).magnSqr()
+			if (nearestIntersectDistanceSqr == null || distanceSqr < nearestIntersectDistanceSqr)
+			{
+				nearestIntersect = intersect
+				nearestIntersectDistanceSqr = distanceSqr
+			}
+		}
+		
+		return { intersect: nearestIntersect }
+	}
+	
+	
+	static sweptCircleConvexPolygonRaycast2d(circleSweepV1, circleSweepV2, circleRadius, polygon)
+	{
+		let nearestIntersect = null
+		let nearestIntersectDistanceSqr = null
+		
+		for (let i = 0; i < polygon.vertices.length; i++)
+		{
+			let v1 = polygon.vertices[i]
+			let v2 = polygon.vertices[(i + 1) % polygon.vertices.length]
+			
+			let intersect = Geometry.sweptCircleSegmentRaycast2d(circleSweepV1, circleSweepV2, circleRadius, v1, v2)
 			if (intersect == null)
 				continue
 			
@@ -143,7 +192,7 @@ class Geometry
 			let v2 = polygon.vertices[(i + 1) % polygon.vertices.length]
 			let edge = v2.sub(v1)
 			let relativeCirclePos = circlePosition.sub(v1)
-			let isCenterInside = relativeCirclePos.dot(edge.clockwisePerpendicular()) > 0
+			let isCenterInside = relativeCirclePos.dot(edge.clockwisePerpendicular()) < 0
 			let vectorToEdge = relativeCirclePos.project(edge).sub(relativeCirclePos)
 			
 			let resolutionVector = null
