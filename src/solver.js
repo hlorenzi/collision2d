@@ -43,6 +43,20 @@ class Solver
 	}
 	
 	
+	raycastByCollision(position, step, radius)
+	{
+		for (let i = 0; i < 500; i += 1)
+		{
+			if (solver.isInside(position, radius))
+				break
+			
+			position = position.add(step)
+		}
+		
+		return { point: position, normal: new Vec2(0, -1) }
+	}
+	
+	
 	solveCircle(position, speed, radius)
 	{
 		position = position.add(speed)

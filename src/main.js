@@ -86,7 +86,7 @@ function main()
 		h: 100,
 		edgeNum: 16,
 		rotation: 0,
-		rotationSpeed: 0.01,
+		rotationSpeed: 0.001,
 		polygons: [ new SolverPolygon([]), new SolverPolygon([]), new SolverPolygon([]), new SolverPolygon([]), new SolverPolygon([]) ]
 	})
 	
@@ -268,7 +268,14 @@ function draw()
 		}
 	}*/
 	
-	/*let raycast = solver.raycast(player.position.add(new Vec2(0, -player.radius - 10)), new Vec2(0, 1), player.radius - 0.1)
+	let collision = solver.raycastByCollision(player.position, new Vec2(0, 1), player.radius)
+	
+	ctx.strokeStyle = "#4ff"
+	ctx.beginPath()
+	ctx.arc(collision.x, collision.y, player.radius, 0, Math.PI * 2)
+	ctx.stroke()
+	
+	let raycast = solver.raycast(player.position.add(new Vec2(0, -player.radius - 10)), new Vec2(0, 1), player.radius)
 	if (raycast != null)
 	{
 		ctx.strokeStyle = "#ccc"
@@ -292,7 +299,7 @@ function draw()
 		ctx.moveTo(raycast.point.x, raycast.point.y)
 		ctx.lineTo(raycast.point.x + raycast.normal.x * 15, raycast.point.y + raycast.normal.y * 15)
 		ctx.stroke()
-	}*/
+	}
 	
 	ctx.strokeStyle = "#00f"
 	ctx.beginPath()

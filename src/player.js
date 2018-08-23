@@ -5,6 +5,8 @@ class Player
 		this.position = position != null ? position : new Vec2(0, 0)
 		this.radius = 15
 		
+		this.useGravity = true
+		
 		this.onGround = false
 		this.onGroundLast = false
 		this.jumping = false
@@ -16,6 +18,12 @@ class Player
 	
 	step(input, solver)
 	{
+		if (input.toggle)
+		{
+			this.useGravity = !this.useGravity
+			input.toggle = false
+		}
+		
 		this.processHorizontalMovement(input, solver)
 		this.processVerticalMovement(input, solver)
 		
@@ -27,12 +35,19 @@ class Player
 	processHorizontalMovement(input, solver)
 	{
 		let accel = new Vec2(input.left ? -1 : input.right ? 1 : 0, 0)
+		if (!this.useGravity)
+			accel = accel.add(new Vec2(0, input.up ? -1 : input.down ? 1 : 0))
+		
 		this.speedMovement = this.speedMovement.add(accel)
 		
 		if (this.speedMovement.magn() > 5)
 			this.speedMovement = this.speedMovement.norm().scale(5)
 		
-		if (!input.left && !input.right && this.speedMovement.magn() > 0)
+		let noInput = !input.left && !input.right
+		if (!this.useGravity)
+			noInput &= !input.up && !input.down
+		
+		if (noInput && this.speedMovement.magn() > 0)
 			this.speedMovement = this.speedMovement.norm().scale(Math.max(this.speedMovement.magn() - 1, 0))
 		
 		let solverResult = solver.solveCircle(this.position, this.speedMovement, this.radius)
@@ -42,6 +57,9 @@ class Player
 	
 	processVerticalMovement(input, solver)
 	{
+		if (!this.useGravity)
+			return
+		
 		this.speedGravity = this.speedGravity.add(new Vec2(0, 0.5))
 		if (this.speedGravity.magn() > 20)
 			this.speedGravity = this.speedGravity.norm().scale(20)
