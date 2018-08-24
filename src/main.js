@@ -7,12 +7,14 @@ let canvasHeight = 0
 let solver = null
 let player = null
 let movingPlatforms = null
+let drawDebug = false
 
 
 let input =
 {
 	reset: false,
 	toggle: false,
+	debug: false,
 	up: false,
 	down: false,
 	left: false,
@@ -86,7 +88,7 @@ function main()
 		h: 100,
 		edgeNum: 16,
 		rotation: 0,
-		rotationSpeed: 0.001,
+		rotationSpeed: 0.005,
 		polygons: [ new SolverPolygon([]), new SolverPolygon([]), new SolverPolygon([]), new SolverPolygon([]), new SolverPolygon([]) ]
 	})
 	
@@ -157,6 +159,10 @@ function onKey(ev, down)
 		case "t":
 			input.toggle = down
 			break
+			
+		case "h":
+			input.debug = down
+			break
 		
 		default:
 			return
@@ -202,6 +208,12 @@ function step()
 	}
 	
 	player.step(input, solver)
+	
+	if (input.debug)
+	{
+		input.debug = false
+		drawDebug = !drawDebug
+	}
 	
 	draw()
 	window.requestAnimationFrame(step)
@@ -268,37 +280,40 @@ function draw()
 		}
 	}*/
 	
-	let collision = solver.raycastByCollision(player.position, new Vec2(0, 1), player.radius)
-	
-	ctx.strokeStyle = "#4ff"
-	ctx.beginPath()
-	ctx.arc(collision.x, collision.y, player.radius, 0, Math.PI * 2)
-	ctx.stroke()
-	
-	let raycast = solver.raycast(player.position.add(new Vec2(0, -player.radius - 10)), new Vec2(0, 1), player.radius)
-	if (raycast != null)
+	if (drawDebug)
 	{
-		ctx.strokeStyle = "#ccc"
+		let collision = solver.raycastByCollision(player.position, new Vec2(0, 1), player.radius)
+		
+		ctx.strokeStyle = "#4ff"
 		ctx.beginPath()
-		ctx.moveTo(player.position.x, player.position.y)
-		ctx.lineTo(raycast.point.x, raycast.point.y)
+		ctx.arc(collision.x, collision.y, player.radius, 0, Math.PI * 2)
 		ctx.stroke()
 		
-		ctx.strokeStyle = "#888"
-		ctx.beginPath()
-		ctx.arc(raycast.point.x, raycast.point.y, player.radius, 0, Math.PI * 2)
-		ctx.stroke()
-		
-		ctx.strokeStyle = "#ccc"
-		ctx.beginPath()
-		ctx.arc(raycast.point.x, raycast.point.y, 2, 0, Math.PI * 2)
-		ctx.stroke()
-		
-		ctx.strokeStyle = "#f80"
-		ctx.beginPath()
-		ctx.moveTo(raycast.point.x, raycast.point.y)
-		ctx.lineTo(raycast.point.x + raycast.normal.x * 15, raycast.point.y + raycast.normal.y * 15)
-		ctx.stroke()
+		let raycast = solver.raycast(player.position.add(new Vec2(0, -player.radius - 10)), new Vec2(0, 1), player.radius)
+		if (raycast != null)
+		{
+			ctx.strokeStyle = "#ccc"
+			ctx.beginPath()
+			ctx.moveTo(player.position.x, player.position.y)
+			ctx.lineTo(raycast.point.x, raycast.point.y)
+			ctx.stroke()
+			
+			ctx.strokeStyle = "#888"
+			ctx.beginPath()
+			ctx.arc(raycast.point.x, raycast.point.y, player.radius, 0, Math.PI * 2)
+			ctx.stroke()
+			
+			ctx.strokeStyle = "#ccc"
+			ctx.beginPath()
+			ctx.arc(raycast.point.x, raycast.point.y, 2, 0, Math.PI * 2)
+			ctx.stroke()
+			
+			ctx.strokeStyle = "#f80"
+			ctx.beginPath()
+			ctx.moveTo(raycast.point.x, raycast.point.y)
+			ctx.lineTo(raycast.point.x + raycast.normal.x * 15, raycast.point.y + raycast.normal.y * 15)
+			ctx.stroke()
+		}
 	}
 	
 	ctx.strokeStyle = "#00f"
