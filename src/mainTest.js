@@ -5,7 +5,10 @@ let canvasHeight = 0
 
 let gravity = null
 let player = null
-let segment = null
+let polygon = null
+
+let mouseDown = false
+let mousePos = null
 
 
 let input =
@@ -28,14 +31,24 @@ function main()
 	ctx = canvas.getContext("2d")
 	
 	gravity = new Vec2(0, 1)
-	player = { position: new Vec2(0, -100), radius: 15 }
-	segment = { v1: new Vec2(-100, 100), v2: new Vec2(100, -50) }
+	player = { position: new Vec2(0, 0), radius: 15 }
+	polygon =
+	{
+		vertices: [
+			new Vec2(-100, 100),
+			new Vec2(100, -50),
+			new Vec2(150, 150),
+		]
+	}
 	
+	mousePos = new Vec2(0, 0)
 	draw()
 	
 	window.onkeydown = (ev) => onKey(ev, true)
 	window.onkeyup = (ev) => onKey(ev, false)
 	window.onresize = (ev) => onResize()
+	window.onmousedown = (ev) => onMouseDown(ev)
+	window.onmouseup = (ev) => onMouseUp(ev)
 	window.onmousemove = (ev) => onMouseMove(ev)
 	window.requestAnimationFrame(step)
 	
@@ -102,11 +115,30 @@ function getMousePosFromEvent(ev, elem)
 }
 	
 	
+function onMouseDown(ev)
+{
+	mouseDown = true
+	onMouseMove(ev)
+}
+	
+	
+function onMouseUp(ev)
+{
+	mouseDown = false
+}
+	
+	
 function onMouseMove(ev)
 {
-	let pos = getMousePosFromEvent(ev, canvas)
+	mousePos = getMousePosFromEvent(ev, canvas)
 	
-	gravity = pos.norm()
+	if (mouseDown)
+	{
+		if (mousePos.sub(player.position).magn() > 1)
+			gravity = mousePos.sub(player.position).norm()
+	}
+	else
+		player.position = mousePos
 }
 
 
@@ -129,13 +161,13 @@ function draw()
 	
 	timer += 1
 	
-	let testV1 = new Vec2(-350, 200)
-	let testV2 = new Vec2( 350, 200)
+	let testV1 = player.position.sub(gravity.clockwisePerpendicular().scale(350))
+	let testV2 = player.position.add(gravity.clockwisePerpendicular().scale(350))
 	for (let i = 0; i <= 15; i++)
 	{
 		let ballPos = testV1.add(testV2.sub(testV1).scale((i + (timer * 0.0025) % 1) / 15))
 		
-		let collision = Geometry.circleSegmentNoSlideCollision2d(ballPos, gravity, player.radius, segment.v1, segment.v2)
+		let collision = Geometry.circleConvexPolygonNoSlideCollision2d(ballPos, gravity, player.radius, polygon)
 		if (collision == null)
 			collision = { point: ballPos, normal: new Vec2(0, 0) }
 		
@@ -160,8 +192,14 @@ function draw()
 	
 	ctx.strokeStyle = "#000"
 	ctx.beginPath()
-	ctx.moveTo(segment.v1.x, segment.v1.y)
-	ctx.lineTo(segment.v2.x, segment.v2.y)
+	for (let i = 0; i < polygon.vertices.length; i++)
+	{
+		let v1 = polygon.vertices[i]
+		let v2 = polygon.vertices[(i + 1) % polygon.vertices.length]
+		
+		ctx.moveTo(v1.x, v1.y)
+		ctx.lineTo(v2.x, v2.y)
+	}
 	ctx.stroke()
 	
 	ctx.restore()

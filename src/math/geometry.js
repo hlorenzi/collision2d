@@ -269,6 +269,41 @@ class Geometry
 		let resolutionPoint = circlePosition.add(nearestVertexProjected).sub(circleDirection.scale(resolutionPointDistance))
 		let resolutionNormal = resolutionPoint.sub(nearestVertex).norm()
 		
+		if (resolutionPoint.sub(circlePosition).dot(circleDirection) > 0)
+			return null
+		
 		return { point: resolutionPoint, normal: resolutionNormal }
+	}
+	
+	
+	static circleConvexPolygonNoSlideCollision2d(circlePosition, circleDirection, circleRadius, polygon)
+	{
+		let collided = true
+		let furthestResolutionPoint = null
+		let furthestResolutionNormal = null
+		let furthestResolutionPointDistanceSqr = null
+		
+		for (let i = 0; i < polygon.vertices.length; i++)
+		{
+			let v1 = polygon.vertices[i]
+			let v2 = polygon.vertices[(i + 1) % polygon.vertices.length]
+			
+			let collision = Geometry.circleSegmentNoSlideCollision2d(circlePosition, circleDirection, circleRadius, v1, v2)
+			if (collision == null)
+				continue
+			
+			let resolutionPointDistanceSqr = collision.point.sub(circlePosition).magnSqr()
+			if (furthestResolutionPointDistanceSqr == null || resolutionPointDistanceSqr > furthestResolutionPointDistanceSqr)
+			{
+				furthestResolutionPointDistanceSqr = resolutionPointDistanceSqr
+				furthestResolutionPoint = collision.point
+				furthestResolutionNormal = collision.normal
+			}
+		}
+		
+		if (furthestResolutionPoint == null)
+			return null
+		
+		return { point: furthestResolutionPoint, normal: furthestResolutionNormal }
 	}
 }
