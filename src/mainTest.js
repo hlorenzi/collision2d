@@ -159,7 +159,7 @@ function draw()
 	
 	ctx.translate(canvasWidth / 2, canvasHeight / 2)
 	
-	timer += 1
+	//timer += 1
 	
 	let testV1 = player.position.sub(gravity.clockwisePerpendicular().scale(350))
 	let testV2 = player.position.add(gravity.clockwisePerpendicular().scale(350))

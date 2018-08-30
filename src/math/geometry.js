@@ -228,6 +228,17 @@ class Geometry
 	}
 	
 	
+	static circlePlaneCheck2d(circlePosition, circleRadius, segmentV1, segmentV2)
+	{
+		let edge = segmentV2.sub(segmentV1)
+		let edgeNormal = edge.clockwisePerpendicular().norm()
+		
+		let nearestRelativePointInCircle = circlePosition.sub(edgeNormal.scale(circleRadius)).sub(segmentV1)
+		
+		return nearestRelativePointInCircle.dot(edgeNormal) < 0
+	}
+	
+	
 	static circleSegmentNoSlideCollision2d(circlePosition, circleDirection, circleRadius, segmentV1, segmentV2)
 	{
 		let segmentLength = segmentV2.sub(segmentV1)
@@ -287,6 +298,18 @@ class Geometry
 		{
 			let v1 = polygon.vertices[i]
 			let v2 = polygon.vertices[(i + 1) % polygon.vertices.length]
+			let v3 = polygon.vertices[(i + 2) % polygon.vertices.length]
+			
+			let edge12 = v2.sub(v1)
+			let edge23 = v3.sub(v2)
+			
+			let normal12 = edge12.clockwisePerpendicular().norm()
+			let normal23 = edge23.clockwisePerpendicular().norm()
+			
+			let normalAvg = normal12.add(normal23).norm()
+			
+			collided &= Geometry.circlePlaneCheck2d(circlePosition, circleRadius, v1, v2)
+			collided &= Geometry.circlePlaneCheck2d(circlePosition, circleRadius, v2.sub(normalAvg.scale(0)), v2.sub(normalAvg.scale(0)).sub(normalAvg.clockwisePerpendicular()))
 			
 			let collision = Geometry.circleSegmentNoSlideCollision2d(circlePosition, circleDirection, circleRadius, v1, v2)
 			if (collision == null)
@@ -301,7 +324,7 @@ class Geometry
 			}
 		}
 		
-		if (furthestResolutionPoint == null)
+		if (furthestResolutionPoint == null || !collided)
 			return null
 		
 		return { point: furthestResolutionPoint, normal: furthestResolutionNormal }
