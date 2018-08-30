@@ -226,4 +226,49 @@ class Geometry
 		
 		return { collided, nearestResolutionVector }
 	}
+	
+	
+	static circleSegmentNoSlideCollision2d(circlePosition, circleDirection, circleRadius, segmentV1, segmentV2)
+	{
+		let segmentLength = segmentV2.sub(segmentV1)
+		let segmentNormal = segmentLength.clockwisePerpendicular().norm()
+		
+		if (circleDirection.dot(segmentNormal) >= 0)
+			return null
+		
+		let nearestCirclePoint = circlePosition.sub(segmentNormal.scale(circleRadius))
+		
+		let nearestCirclePointRelative = nearestCirclePoint.sub(segmentV1)
+		if (nearestCirclePointRelative.dot(segmentNormal) >= 0)
+			return null
+		
+		let lineLineIntersect = Geometry.lineLineIntersection2d(nearestCirclePoint, nearestCirclePoint.add(circleDirection), segmentV1, segmentV2)
+		if (lineLineIntersect == null)
+			return null
+		
+		if (lineLineIntersect.bt >= 0 && lineLineIntersect.bt <= 1)
+		{
+			let resolutionPoint = lineLineIntersect.point.add(segmentNormal.scale(circleRadius))
+			
+			return { point: resolutionPoint, normal: segmentNormal }
+		}
+		
+		let nearestVertex = (lineLineIntersect.bt > 0.5 ? segmentV2 : segmentV1)
+		let nearestVertexRelative = nearestVertex.sub(circlePosition)
+		
+		let nearestVertexProjected = nearestVertexRelative.project(circleDirection)
+		
+		let nearestVertexProjectedDistanceSqr = nearestVertexProjected.sub(nearestVertexRelative).magnSqr()
+		if (nearestVertexProjectedDistanceSqr > circleRadius * circleRadius)
+			return null
+		
+		let resolutionPointDistance = Math.sqrt(circleRadius * circleRadius - nearestVertexProjectedDistanceSqr)
+		if (resolutionPointDistance > circleRadius)
+			return null
+		
+		let resolutionPoint = circlePosition.add(nearestVertexProjected).sub(circleDirection.scale(resolutionPointDistance))
+		let resolutionNormal = resolutionPoint.sub(nearestVertex).norm()
+		
+		return { point: resolutionPoint, normal: resolutionNormal }
+	}
 }
