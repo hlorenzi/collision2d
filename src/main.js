@@ -65,7 +65,7 @@ function main()
 	solver.polygons.push(new SolverPolygon([
 		new Vec2(150, 200),
 		new Vec2(300, 200),
-		new Vec2(300, 210),
+		new Vec2(300, 250),
 		new Vec2(150, 210)]))
 	solver.polygons.push(new SolverPolygon([
 		new Vec2(450, 150),
@@ -172,6 +172,7 @@ function onKey(ev, down)
 }
 
 
+let slowdown = 0
 function step()
 {
 	/*solver.polygons = []
@@ -207,7 +208,9 @@ function step()
 		}
 	}
 	
-	player.step(input, solver)
+	slowdown++
+	if (slowdown % 1 == 0)
+		player.step(input, solver)
 	
 	if (input.debug)
 	{

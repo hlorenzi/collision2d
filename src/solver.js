@@ -72,8 +72,12 @@ class Solver
 				if (!collision.collided)
 					continue
 				
+				if (i >= 9 && collision.nearestResolutionVector.magn() >= 1)
+					throw "unsolved"
+				
 				collided = true
-				resolutionVector = resolutionVector.add(collision.nearestResolutionVector)
+				if (collision.nearestResolutionVector.magn() > resolutionVector.magn())
+					resolutionVector = collision.nearestResolutionVector
 			}
 			
 			position = position.add(resolutionVector)
@@ -83,6 +87,32 @@ class Solver
 		}
 		
 		return { position, collided }
+	}
+	
+	
+	solveCircleNoSlide(position, direction, radius)
+	{
+		let collided = false
+		
+		let resolutionVector = new Vec2(0, 0)
+		let normal = new Vec2(0, 0)
+		for (let polygon of this.polygons)
+		{
+			let collision = Geometry.circleConvexPolygonNoSlideCollision2d(position, direction, radius, polygon)
+			if (collision == null)
+				continue
+			
+			collided = true
+			if (collision.resolutionVector.magn() > resolutionVector.magn())
+			{
+				resolutionVector = collision.resolutionVector
+				normal = collision.normal
+			}
+		}
+		
+		position = position.add(resolutionVector)
+		
+		return { position, collided, normal }
 	}
 	
 	

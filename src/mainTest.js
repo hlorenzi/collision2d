@@ -150,6 +150,7 @@ function step()
 
 
 let timer = 0
+let mode = 0
 function draw()
 {
 	ctx.save()
@@ -161,32 +162,58 @@ function draw()
 	
 	//timer += 1
 	
+	if (input.toggle)
+	{
+		input.toggle = false
+		mode = (mode + 1) % 2
+	}
+	
 	let testV1 = player.position.sub(gravity.clockwisePerpendicular().scale(350))
 	let testV2 = player.position.add(gravity.clockwisePerpendicular().scale(350))
 	for (let i = 0; i <= 15; i++)
 	{
 		let ballPos = testV1.add(testV2.sub(testV1).scale((i + (timer * 0.0025) % 1) / 15))
 		
-		let collision = Geometry.circleConvexPolygonNoSlideCollision2d(ballPos, gravity, player.radius, polygon)
-		if (collision == null)
-			collision = { point: ballPos, normal: new Vec2(0, 0) }
+		let resolutionVector = new Vec2(0, 0)
+		let collisionNormal = new Vec2(0, 0)
+		
+		if (mode == 0)
+		{
+			let collision = Geometry.circleConvexPolygonCollision2d(ballPos, player.radius, polygon)
+			if (collision.collided)
+			{
+				resolutionVector = collision.nearestResolutionVector
+				collisionNormal = collision.nearestResolutionVector.norm()
+			}
+		}
+		else
+		{
+			let collision = Geometry.circleConvexPolygonNoSlideCollision2d(ballPos, gravity, player.radius, polygon)
+			if (collision != null)
+			{
+				resolutionVector = collision.point.sub(ballPos)
+				collisionNormal = collision.normal
+			}
+		}
+		
+		const resolvedPos = ballPos.add(resolutionVector)
 		
 		ctx.strokeStyle = "#ccc"
 		ctx.beginPath()
 		ctx.arc(ballPos.x, ballPos.y, player.radius, 0, Math.PI * 2)
 		ctx.moveTo(ballPos.x, ballPos.y)
-		ctx.lineTo(collision.point.x, collision.point.y)
+		ctx.lineTo(resolvedPos.x, resolvedPos.y)
 		ctx.stroke()
 		
-		ctx.strokeStyle = "#00f"
+		ctx.strokeStyle = (mode == 0 ? "#00f" : "#f00")
 		ctx.beginPath()
-		ctx.arc(collision.point.x, collision.point.y, player.radius, 0, Math.PI * 2)
+		ctx.arc(resolvedPos.x, resolvedPos.y, player.radius, 0, Math.PI * 2)
 		ctx.stroke()
 		
 		ctx.strokeStyle = "#fa0"
 		ctx.beginPath()
-		ctx.moveTo(collision.point.x - collision.normal.x * 15, collision.point.y - collision.normal.y * 15)
-		ctx.lineTo(collision.point.x + collision.normal.x * 15, collision.point.y + collision.normal.y * 15)
+		ctx.moveTo(resolvedPos.x - collisionNormal.x * 15, resolvedPos.y - collisionNormal.y * 15)
+		ctx.lineTo(resolvedPos.x + collisionNormal.x * 15, resolvedPos.y + collisionNormal.y * 15)
 		ctx.stroke()
 	}
 	

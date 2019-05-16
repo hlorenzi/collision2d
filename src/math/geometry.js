@@ -187,11 +187,17 @@ class Geometry
 		let collided = true
 		let nearestResolutionVector = null
 		let nearestResolutionDistanceSqr = null
+		let nearestOutsideEdge = false
+		let nearestVertex = null
 		
-		let testEdge = (v1, v2) =>
+		for (let i = 0; i < polygon.vertices.length; i++)
 		{
+			let v1 = polygon.vertices[i]
+			let v2 = polygon.vertices[(i + 1) % polygon.vertices.length]
+			
 			let edge = v2.sub(v1)
 			let edgeOutsideNormal = edge.clockwisePerpendicular().norm()
+			let edgeT = circlePosition.sub(v1).dot(edge) / edge.dot(edge)
 			
 			let nearestRelativePointInCircle = circlePosition.sub(edgeOutsideNormal.scale(circleRadius)).sub(v1)
 			let isNearestPointInside = nearestRelativePointInCircle.dot(edgeOutsideNormal) < 0
@@ -203,25 +209,22 @@ class Geometry
 			{
 				nearestResolutionDistanceSqr = resolutionVector.magnSqr()
 				nearestResolutionVector = resolutionVector
+				nearestOutsideEdge = (edgeT <= 0 || edgeT >= 1)
+				nearestVertex = (edgeT < 0.5 ? i : ((i + 1) % polygon.vertices.length))
 			}
 		}
 		
-		for (let i = 0; i < polygon.vertices.length; i++)
+		if (nearestOutsideEdge)
 		{
-			let v1 = polygon.vertices[i]
-			let v2 = polygon.vertices[(i + 1) % polygon.vertices.length]
-			let v3 = polygon.vertices[(i + 2) % polygon.vertices.length]
+			let vertexToCircle = circlePosition.sub(polygon.vertices[nearestVertex])
+			let vertexToCircleDist = vertexToCircle.magn()
+			nearestResolutionVector = vertexToCircle.norm().scale(circleRadius - vertexToCircleDist)
 			
-			let edge12 = v2.sub(v1)
-			let edge23 = v3.sub(v2)
-			
-			let normal12 = edge12.clockwisePerpendicular().norm()
-			let normal23 = edge23.clockwisePerpendicular().norm()
-			
-			let normalAvg = normal12.add(normal23).norm()
-			
-			testEdge(v1, v2)
-			testEdge(v2.sub(normalAvg.scale(0)), v2.sub(normalAvg.scale(0)).sub(normalAvg.clockwisePerpendicular()))
+			if (vertexToCircleDist > circleRadius)
+			{
+				collided = false
+				nearestResolutionVector = null
+			}
 		}
 		
 		return { collided, nearestResolutionVector }
@@ -327,6 +330,6 @@ class Geometry
 		if (furthestResolutionPoint == null || !collided)
 			return null
 		
-		return { point: furthestResolutionPoint, normal: furthestResolutionNormal }
+		return { point: furthestResolutionPoint, normal: furthestResolutionNormal, resolutionVector: furthestResolutionPoint.sub(circlePosition) }
 	}
 }

@@ -73,24 +73,29 @@ class Player
 			this.jumping = false
 		}
 		
-		let raycastYOffset = 1
-		let raycastDownwards = solver.raycast(this.position.add(new Vec2(0, -raycastYOffset)), new Vec2(0, 1), this.radius)
-		let isInside = solver.isInside(this.position, this.radius)
+		const prevPosition = this.position
 		
-		let groundDistance = (raycastDownwards == null ? Infinity : raycastDownwards.point.sub(this.position).magn() - raycastYOffset)
-		let groundNormal = (raycastDownwards == null ? new Vec2(0, -1) : raycastDownwards.normal)
-		let groundIsSteep = (groundNormal.dot(new Vec2(0, -1)) < 0.3)
+		const solverOffset = new Vec2(0, 1)
+		const solverResultNoSlide = solver.solveCircleNoSlide(this.position.add(this.speedGravity), new Vec2(0, 1), this.radius)
 		
+		const groundRaycastOffset = 1
+		const groundRaycast = solver.raycast(this.position.add(new Vec2(0, -groundRaycastOffset)), new Vec2(0, 1), this.radius)
+		const groundDistance = (groundRaycast == null ? Infinity : groundRaycast.point.sub(this.position).magn() - groundRaycastOffset)
+		const groundNormal = (groundRaycast == null ? new Vec2(0, -1) : groundRaycast.normal)
+		const groundSteepness = groundNormal.dot(new Vec2(0, -1))
+		const groundIsSteep = (groundSteepness < 0.3 || solverResultNoSlide.normal.dot(new Vec2(0, -1)) < groundSteepness * 0.95)
+		const isInside = solver.isInside(this.position, this.radius)
+		
+		console.log(groundNormal.dot(new Vec2(0, -1)), solverResultNoSlide.normal.dot(new Vec2(0, -1)))
 		this.onGroundLast = this.onGround
-		this.onGround = (this.speedGravity.y >= 0 && groundDistance < 2)
+		this.onGround = solverResultNoSlide.collided && this.speedGravity.y >= 0 && groundDistance < 2
 		
-		if (this.speedGravity.y >= 0 && !isInside && this.onGroundLast && groundDistance < 20 && raycastDownwards != null)
+		if (this.speedGravity.y >= 0 && !isInside && !groundIsSteep && this.onGroundLast && groundDistance < 20 && groundRaycast != null)
 		{
-			this.position = raycastDownwards.point
+			this.position = groundRaycast.point
 			this.onGround = true
 		}
-		
-		if (this.speedGravity.y < 0 || groundIsSteep)
+		else if (this.speedGravity.y < 0 || groundIsSteep)
 		{
 			let solverResult = solver.solveCircle(this.position, this.speedGravity, this.radius)
 			let movedDistance = solverResult.position.sub(this.position).magn()
@@ -102,8 +107,10 @@ class Player
 		}
 		else if (this.speedGravity.y > 0)
 		{
-			this.position = this.position.add(this.speedGravity.norm().scale(Math.min(this.speedGravity.magn(), groundDistance)))
+			this.position = solverResultNoSlide.position// this.position.add(this.speedGravity.norm().scale(Math.min(this.speedGravity.magn(), groundDistance)))
 		}
+		
+		this.speedGravity = new Vec2(0, this.position.y - prevPosition.y)
 		
 		if (this.onGround && !groundIsSteep)
 		{
@@ -111,6 +118,7 @@ class Player
 			
 			if (input.up)
 			{
+				console.log("jumped")
 				this.speedGravity = new Vec2(0, -12)
 				this.jumping = true
 			}
